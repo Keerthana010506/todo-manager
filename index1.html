@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ultimate To-Do Manager</title>
+
+<style>
+
+body{
+font-family:Segoe UI;
+background:linear-gradient(135deg,#6a11cb,#2575fc);
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+transition:0.3s;
+}
+
+.dark{
+background:#121212;
+color:white;
+}
+
+.container{
+background:white;
+padding:30px;
+width:460px;
+border-radius:15px;
+box-shadow:0 15px 35px rgba(0,0,0,0.3);
+text-align:center;
+}
+
+.dark .container{
+background:#1e1e1e;
+}
+
+h1{
+margin-bottom:5px;
+}
+
+.tagline{
+font-size:14px;
+color:gray;
+margin-bottom:15px;
+}
+
+.top{
+display:flex;
+justify-content:space-between;
+margin-bottom:10px;
+}
+
+.search{
+width:60%;
+padding:7px;
+border-radius:5px;
+border:1px solid #ccc;
+}
+
+.toggle{
+background:#333;
+color:white;
+border:none;
+padding:6px 10px;
+border-radius:5px;
+cursor:pointer;
+}
+
+.input-section{
+display:flex;
+gap:5px;
+margin-top:10px;
+flex-wrap:wrap;
+}
+
+input,select{
+padding:7px;
+border-radius:5px;
+border:1px solid #ccc;
+}
+
+.add{
+background:#28a745;
+color:white;
+border:none;
+padding:8px 12px;
+border-radius:5px;
+cursor:pointer;
+}
+
+ul{
+list-style:none;
+padding:0;
+margin-top:20px;
+max-height:200px;
+overflow:auto;
+}
+
+li{
+background:#f3f3f3;
+padding:10px;
+margin-top:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+border-radius:6px;
+cursor:grab;
+}
+
+.dark li{
+background:#2c2c2c;
+}
+
+.completed{
+text-decoration:line-through;
+color:gray;
+}
+
+.priority-high{
+color:red;
+font-weight:bold;
+}
+
+.priority-medium{
+color:orange;
+}
+
+.priority-low{
+color:green;
+}
+
+.deadline{
+font-size:12px;
+margin-left:8px;
+color:#777;
+}
+
+.delete{
+background:red;
+border:none;
+color:white;
+padding:4px 8px;
+border-radius:4px;
+cursor:pointer;
+}
+
+.progress{
+width:100%;
+height:10px;
+background:#ddd;
+border-radius:5px;
+margin-top:15px;
+overflow:hidden;
+}
+
+.bar{
+height:100%;
+background:#28a745;
+width:0%;
+transition:0.3s;
+}
+
+.counter{
+margin-top:10px;
+font-size:14px;
+}
+
+.clear{
+margin-top:10px;
+background:#dc3545;
+color:white;
+border:none;
+padding:8px 12px;
+border-radius:5px;
+cursor:pointer;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>Ultimate To-Do Manager</h1>
+<p class="tagline">Organize tasks and boost productivity 🚀</p>
+
+<div class="top">
+<input class="search" id="search" placeholder="Search tasks..." onkeyup="searchTask()">
+<button class="toggle" onclick="toggleMode()">🌙</button>
+</div>
+
+<div class="input-section">
+<input id="taskInput" placeholder="Enter task">
+<input type="date" id="deadline">
+<select id="priority">
+<option value="low">Low</option>
+<option value="medium">Medium</option>
+<option value="high">High</option>
+</select>
+<button class="add" onclick="addTask()">Add</button>
+</div>
+
+<ul id="taskList"></ul>
+
+<div class="progress">
+<div class="bar" id="progressBar"></div>
+</div>
+
+<p class="counter">
+Total: <span id="total">0</span> |
+Completed: <span id="completed">0</span>
+</p>
+
+<button class="clear" onclick="clearAll()">Clear All</button>
+
+</div>
+
+<script>
+
+let tasks=JSON.parse(localStorage.getItem("tasks"))||[];
+
+function renderTasks(){
+
+let list=document.getElementById("taskList");
+list.innerHTML="";
+
+tasks.forEach((task,index)=>{
+
+let li=document.createElement("li");
+li.draggable=true;
+
+li.innerHTML=`
+<span onclick="toggleTask(${index})" class="${task.completed?'completed':''}">
+${task.text}
+</span>
+
+<span class="priority-${task.priority}">
+${task.priority.toUpperCase()}
+</span>
+
+<span class="deadline">${task.date||""}</span>
+
+<button class="delete" onclick="deleteTask(${index})">X</button>
+`;
+
+li.addEventListener("dragstart",()=>dragStart(index));
+li.addEventListener("dragover",e=>e.preventDefault());
+li.addEventListener("drop",()=>dropTask(index));
+
+list.appendChild(li);
+
+});
+
+updateStats();
+localStorage.setItem("tasks",JSON.stringify(tasks));
+}
+
+let dragged;
+
+function dragStart(i){
+dragged=i;
+}
+
+function dropTask(i){
+
+let item=tasks.splice(dragged,1)[0];
+tasks.splice(i,0,item);
+
+renderTasks();
+}
+
+function addTask(){
+
+let text=document.getElementById("taskInput").value;
+let date=document.getElementById("deadline").value;
+let priority=document.getElementById("priority").value;
+
+if(text===""){
+alert("Enter a task");
+return;
+}
+
+tasks.push({text:text,date:date,priority:priority,completed:false});
+
+document.getElementById("taskInput").value="";
+document.getElementById("deadline").value="";
+
+renderTasks();
+}
+
+function deleteTask(i){
+
+tasks.splice(i,1);
+renderTasks();
+}
+
+function toggleTask(i){
+
+tasks[i].completed=!tasks[i].completed;
+renderTasks();
+}
+
+function clearAll(){
+
+tasks=[];
+renderTasks();
+}
+
+function updateStats(){
+
+let total=tasks.length;
+let completed=tasks.filter(t=>t.completed).length;
+
+document.getElementById("total").innerText=total;
+document.getElementById("completed").innerText=completed;
+
+let percent= total? (completed/total)*100 : 0;
+document.getElementById("progressBar").style.width=percent+"%";
+}
+
+function toggleMode(){
+
+document.body.classList.toggle("dark");
+
+}
+
+function searchTask(){
+
+let keyword=document.getElementById("search").value.toLowerCase();
+let items=document.querySelectorAll("#taskList li");
+
+items.forEach(item=>{
+item.style.display=item.innerText.toLowerCase().includes(keyword)?"flex":"none";
+});
+
+}
+
+renderTasks();
+
+</script>
+
+</body>
+</html>
